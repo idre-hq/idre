@@ -25,12 +25,30 @@ services:
       POSTGRES_PASSWORD: postgres
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      # ADD THIS LINE HERE:
+      - ./init-litellm-db.sh:/docker-entrypoint-initdb.d/init-litellm-db.sh
     healthcheck:
       test: pg_isready -U postgres
       start_period: 10s
       timeout: 1s
       retries: 5
       interval: 5s
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    ports: ["4000:4000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./litellm_config.yaml:/app/config.yaml
+    environment:
+      # CHANGE THE DATABASE NAME AT THE END FROM 'postgres' TO 'litellm_db'
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/litellm_db"
+      
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY} 
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+    command: ["--config", "/app/config.yaml", "--detailed_debug"]
 
   seaweedfs:
     image: chrislusf/seaweedfs
@@ -44,7 +62,7 @@ services:
       -filer=true
       -s3=true
       -master.volumeSizeLimitMB=1024
-      -volume.max=0   # allow volume servers inside same container
+      -volume.max=0   
     volumes:
       - seaweedfs-data:/data
     healthcheck:
@@ -58,9 +76,15 @@ services:
         limits:
           memory: 1G
 
+
+
+  # ---------------------------------------------------------------------------
+  # APP SERVICES
+  # ---------------------------------------------------------------------------
+
   langgraph-api:
     build:
-      context: ./ai-agent              # <--- CHANGED: Current directory (ai-agent)
+      context: ./ai-agent              
       dockerfile: Dockerfile
     image: gc-ai
     ports: ["8123:8000"]
@@ -71,15 +95,20 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      litellm:                  # <--- Added dependency
+        condition: service_started
     env_file:
-      - ai-agent/.env               # <--- CHANGED: Look in root folder
+      - ai-agent/.env               
     environment:
       REDIS_URI: redis://redis:6379
       DATABASE_URI: postgresql://postgres:postgres@postgres:5432/postgres
+      # POINT AI TRAFFIC TO LITELLM PROXY
+      OPENAI_BASE_URL: http://litellm:4000 
+      # If using LangChain/OpenAI SDK, this forces it to use the proxy
 
   backend:
     build:
-      context: ./backend     # <--- CHANGED: Go up one level, then into backend
+      context: ./backend     
       dockerfile: Dockerfile
     image: gc-backend
     ports: ["8001:8001"]
@@ -91,6 +120,8 @@ services:
       postgres:
         condition: service_healthy
       langgraph-api:
+        condition: service_started
+      litellm:                  # <--- Added dependency
         condition: service_started
     env_file:
       - backend/.env             
@@ -104,17 +135,19 @@ services:
       BUCKET_NAME: my-local-bucket
       AWS_ACCESS_KEY_ID: any
       AWS_SECRET_ACCESS_KEY: any
+      # POINT AI TRAFFIC TO LITELLM PROXY
+      OPENAI_BASE_URL: http://litellm:4000 
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    image: gc-frontend
-    ports: ["5173:3000"]
-    depends_on:
-      - backend
-    env_file:
-      - frontend/.env
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   image: gc-frontend
+  #   ports: ["5173:3000"]
+  #   depends_on:
+  #     - backend
+  #   env_file:
+  #     - frontend/.env
 
 volumes:
   postgres-data:

@@ -78,14 +78,17 @@ const Layout: React.FC<LayoutProps> = ({
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
 
+    // Check if we're in files view
+    const isFilesView = location.pathname.includes('/files/');
+
     // --- LOGIC: Auto-collapse sidebar when in 'files' view to mimic IDE ---
     useEffect(() => {
-        if (location.pathname.includes('/files/')) {
+        if (isFilesView) {
             setIsSidebarOpen(false); // Collapsed (Activity Bar mode)
         } else if (window.innerWidth > 768) {
             setIsSidebarOpen(true); // Expanded (Normal Chat mode)
         }
-    }, [location.pathname]);
+    }, [isFilesView]);
 
     // Function to switch chat and navigate to chat route
     const handleSwitchChatWithNavigation = useCallback((chatId: string) => {
@@ -110,7 +113,7 @@ const Layout: React.FC<LayoutProps> = ({
             {/* Sidebar Container */}
             <div className="relative z-[1001] h-full flex-shrink-0 md:static">
                 <ChatSidebar
-                    notebookId={notebookId} // <--- Pass notebookId here
+                    notebookId={notebookId}
                     chatSessions={chatSessions}
                     currentChatId={currentChatId}
                     collapsed={!isSidebarOpen}
@@ -133,18 +136,20 @@ const Layout: React.FC<LayoutProps> = ({
 
             {/* Main Content Area */}
             <main className="flex-1 flex flex-col h-full min-w-0 relative">
-                {/* Mobile Header - Hidden on desktop */}
-                <div className="md:hidden">
-                    <ChatHeader
-                        title={title}
-                        onMenuClick={() => setIsSidebarOpen(true)}
-                        onSettingsClick={handleOpenAIModelsSettings}
-                        currentChat={currentChat}
-                    />
-                </div>
+                {/* Mobile Header - Hidden on desktop AND hidden on mobile when in files view (files view has its own header) */}
+                {!isFilesView && (
+                    <div className="md:hidden">
+                        <ChatHeader
+                            title={title}
+                            onMenuClick={() => setIsSidebarOpen(true)}
+                            onSettingsClick={handleOpenAIModelsSettings}
+                            currentChat={currentChat}
+                        />
+                    </div>
+                )}
 
                 {/* Content Logic */}
-                {isTemporaryChat && !forceRegularLayout && !location.pathname.includes('/files/') ? (
+                {isTemporaryChat && !forceRegularLayout && !isFilesView ? (
                     <div className="flex-1 flex flex-col justify-center items-center overflow-y-auto p-4">
                         <div className="flex flex-col items-center gap-8 w-full max-w-3xl">
                             <img src={idreLogo} alt="Logo" className="w-60 h-auto dark:hidden" />
@@ -159,7 +164,7 @@ const Layout: React.FC<LayoutProps> = ({
                             {children}
                         </div>
                         {/* Only show bottom input area if provided and NOT in files view */}
-                        {!location.pathname.includes('/files/') && inputArea}
+                        {!isFilesView && inputArea}
                         {modelInfo}
                     </>
                 )}

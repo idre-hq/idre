@@ -51,6 +51,9 @@ class Notebook(Base):
     # One-to-one relationship to the default model for this notebook
     default_model = relationship("NotebookModel", back_populates="notebook", uselist=False, cascade="all, delete-orphan")
 
+    # One-to-many relationship to tasks
+    tasks = relationship("Task", back_populates="notebook", cascade="all, delete-orphan")
+
     def __repr__(self):
         """Provides a developer-friendly representation of the object."""
         return f"<Notebook(id={self.id}, title='{self.title}', emoji='{self.emoji}', bg_color='{self.bg_color}')>"

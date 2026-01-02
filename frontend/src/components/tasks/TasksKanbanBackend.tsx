@@ -17,7 +17,7 @@ import {
     type TaskUpdateRequest
 } from "../../services/tasksService";
 
-// Refactored Components
+// Components
 import {type Column, COLUMN_CONFIG, type NewTaskState, type Task} from "./kanban/types";
 import KanbanColumn from "./kanban/KanbanColumn";
 import { TaskDragOverlay } from "./kanban/TaskCard";
@@ -29,9 +29,14 @@ import ConfirmDialog from "../ui/ConfirmDialog";
 interface TasksKanbanProps {
     notebookId: string;
     viewMode?: 'notebook' | 'all';
+    isWidget?: boolean; // <--- NEW PROP
 }
 
-const TasksKanbanBackend: React.FC<TasksKanbanProps> = ({ notebookId, viewMode = 'notebook' }) => {
+const TasksKanbanBackend: React.FC<TasksKanbanProps> = ({
+                                                            notebookId,
+                                                            viewMode = 'notebook',
+                                                            isWidget = false
+                                                        }) => {
     // --- State ---
     const [columns, setColumns] = useState<Column[]>([]);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -185,12 +190,8 @@ const TasksKanbanBackend: React.FC<TasksKanbanProps> = ({ notebookId, viewMode =
         }
     };
 
-    // Triggered when clicking the trash/archive icon
-    const handleArchiveTaskRequest = (task: Task) => {
-        setTaskToArchive(task);
-    };
+    const handleArchiveTaskRequest = (task: Task) => setTaskToArchive(task);
 
-    // Triggered when confirming in the modal
     const executeArchiveTask = async () => {
         if (!taskToArchive) return;
         try {
@@ -211,10 +212,7 @@ const TasksKanbanBackend: React.FC<TasksKanbanProps> = ({ notebookId, viewMode =
         } catch (err) { setError("Failed to unarchive"); }
     };
 
-    // --- Delete Task Logic ---
-    const handleDeleteTaskRequest = (task: Task) => {
-        setTaskToDelete(task);
-    };
+    const handleDeleteTaskRequest = (task: Task) => setTaskToDelete(task);
 
     const executeDeleteTask = async () => {
         if (!taskToDelete) return;
@@ -307,76 +305,73 @@ const TasksKanbanBackend: React.FC<TasksKanbanProps> = ({ notebookId, viewMode =
     if (error) return <div className="h-full flex items-center justify-center flex-col"><AlertCircle className="text-red-500 mb-2"/>{error}<button onClick={fetchTasks} className="mt-4 text-primary underline">Retry</button></div>;
 
     const selectedColumn = columns.find(col => col.id === selectedColumnId);
-
-    // Get all tasks for Gantt view
     const allTasks = columns.flatMap(col => col.tasks);
-
-    // Handle task click for Gantt view
-    const handleTaskClick = (task: Task) => {
-        setViewingTask(task);
-    };
+    const handleTaskClick = (task: Task) => setViewingTask(task);
 
     return (
         <div className="h-full flex flex-col bg-background">
-            <div className="border-b border-border bg-background flex-shrink-0 hidden md:block px-6 py-4">
-                <div className="flex items-center justify-between">
-                    <div className="text-left">
-                        <h1 className="text-2xl font-bold tracking-tight">
-                            {viewMode === 'all' ? 'All Tasks' : 'Tasks'}
-                            {viewDisplay === 'gantt' && ' - Timeline'}
-                        </h1>
-                        <p className="text-sm text-muted-foreground">
-                            {viewDisplay === 'gantt' ? 'Timeline view of tasks with due dates' : 'Manage your workflow'}
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => { setIsArchivedPanelOpen(true); setArchivedSearchQuery(""); }}
-                            className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md flex items-center gap-2 transition-colors"
-                        >
-                            <Archive size={16} />
-                            Archived
-                            {archivedTasks.length > 0 && <span className="bg-secondary-foreground/10 px-2 py-0.5 rounded-full text-xs font-medium">{archivedTasks.length}</span>}
-                        </button>
-                        <button
-                            onClick={() => setShowPriorities(!showPriorities)}
-                            className={`px-3 py-2 text-sm hover:bg-secondary rounded-md flex items-center gap-2 transition-colors ${
-                                showPriorities ? 'text-foreground' : 'text-muted-foreground'
-                            }`}
-                            title={showPriorities ? "Hide priorities" : "Show priorities"}
-                        >
-                            {showPriorities ? <EyeOff size={16} /> : <Eye size={16} />}
-                            Priorities
-                        </button>
-                        <button
-                            onClick={() => setViewDisplay(viewDisplay === 'kanban' ? 'gantt' : 'kanban')}
-                            className={`px-3 py-2 text-sm hover:bg-secondary rounded-md flex items-center gap-2 transition-colors ${
-                                viewDisplay === 'gantt' ? 'text-foreground' : 'text-muted-foreground'
-                            }`}
-                            title={viewDisplay === 'kanban' ? "Show Gantt chart" : "Show Kanban board"}
-                        >
-                            {viewDisplay === 'kanban' ? <BarChart3 size={16} /> : <LayoutGrid size={16} />}
-                            {viewDisplay === 'kanban' ? 'Gantt' : 'Kanban'}
-                        </button>
-                        {canCreate && (
+            {/* Header: Hide if we are in widget mode */}
+            {!isWidget && (
+                <div className="border-b border-border bg-background flex-shrink-0 hidden md:block px-6 py-4">
+                    <div className="flex items-center justify-between">
+                        <div className="text-left">
+                            <h1 className="text-2xl font-bold tracking-tight">
+                                {viewMode === 'all' ? 'All Tasks' : 'Tasks'}
+                                {viewDisplay === 'gantt' && ' - Timeline'}
+                            </h1>
+                            <p className="text-sm text-muted-foreground">
+                                {viewDisplay === 'gantt' ? 'Timeline view of tasks with due dates' : 'Manage your workflow'}
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-3">
                             <button
-                                onClick={() => { setSelectedColumnId(TaskStatus.TODO); setShowTaskModal(true); resetForm(); }}
-                                className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md flex items-center gap-2 text-sm font-medium transition-colors"
+                                onClick={() => { setIsArchivedPanelOpen(true); setArchivedSearchQuery(""); }}
+                                className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md flex items-center gap-2 transition-colors"
                             >
-                                <Plus size={16} /> Add Task
+                                <Archive size={16} />
+                                Archived
+                                {archivedTasks.length > 0 && <span className="bg-secondary-foreground/10 px-2 py-0.5 rounded-full text-xs font-medium">{archivedTasks.length}</span>}
                             </button>
-                        )}
+                            <button
+                                onClick={() => setShowPriorities(!showPriorities)}
+                                className={`px-3 py-2 text-sm hover:bg-secondary rounded-md flex items-center gap-2 transition-colors ${
+                                    showPriorities ? 'text-foreground' : 'text-muted-foreground'
+                                }`}
+                                title={showPriorities ? "Hide priorities" : "Show priorities"}
+                            >
+                                {showPriorities ? <EyeOff size={16} /> : <Eye size={16} />}
+                                Priorities
+                            </button>
+                            <button
+                                onClick={() => setViewDisplay(viewDisplay === 'kanban' ? 'gantt' : 'kanban')}
+                                className={`px-3 py-2 text-sm hover:bg-secondary rounded-md flex items-center gap-2 transition-colors ${
+                                    viewDisplay === 'gantt' ? 'text-foreground' : 'text-muted-foreground'
+                                }`}
+                                title={viewDisplay === 'kanban' ? "Show Gantt chart" : "Show Kanban board"}
+                            >
+                                {viewDisplay === 'kanban' ? <BarChart3 size={16} /> : <LayoutGrid size={16} />}
+                                {viewDisplay === 'kanban' ? 'Gantt' : 'Kanban'}
+                            </button>
+                            {canCreate && (
+                                <button
+                                    onClick={() => { setSelectedColumnId(TaskStatus.TODO); setShowTaskModal(true); resetForm(); }}
+                                    className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md flex items-center gap-2 text-sm font-medium transition-colors"
+                                >
+                                    <Plus size={16} /> Add Task
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Conditional rendering: Kanban or Gantt view */}
             {viewDisplay === 'kanban' ? (
-                <div className="flex-1 overflow-x-auto overflow-y-hidden p-6">
+                <div className={`flex-1 overflow-x-auto overflow-y-hidden ${isWidget ? 'p-2' : 'p-6'}`}>
                     <DndContext collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
                         <div className="flex h-full gap-6 min-w-full">
                             {columns.map((column) => (
-                                <div key={column.id} className="w-[320px] flex-shrink-0 h-full">
+                                <div key={column.id} className={`${isWidget ? 'w-[260px]' : 'w-[320px]'} flex-shrink-0 h-full`}>
                                     <KanbanColumn
                                         column={column}
                                         onAddTask={(id) => { setSelectedColumnId(id); setShowTaskModal(true); resetForm(); }}
@@ -385,10 +380,10 @@ const TasksKanbanBackend: React.FC<TasksKanbanProps> = ({ notebookId, viewMode =
                                         onArchiveTask={handleArchiveTaskRequest}
                                         onUnarchiveTask={handleUnarchiveTask}
                                         onDeleteTask={handleDeleteTaskRequest}
-                                        isMobile={false}
+                                        isMobile={isWidget} // Reuse isMobile styling for widgets
                                         canCreate={canCreate}
                                         showPriorities={showPriorities}
-                                        isAllTasksView={isAllTasksView} // Pass logic here
+                                        isAllTasksView={isAllTasksView}
                                     />
                                 </div>
                             ))}
@@ -399,7 +394,7 @@ const TasksKanbanBackend: React.FC<TasksKanbanProps> = ({ notebookId, viewMode =
                                     <TaskDragOverlay
                                         task={activeTask}
                                         showPriorities={showPriorities}
-                                        isAllTasksView={isAllTasksView} // Pass logic here
+                                        isAllTasksView={isAllTasksView}
                                     />
                                 ) : null}
                             </DragOverlay>,
@@ -414,7 +409,7 @@ const TasksKanbanBackend: React.FC<TasksKanbanProps> = ({ notebookId, viewMode =
                 />
             )}
 
-            {/* Modals */}
+            {/* Modals - All function correctly inside widget due to fixed positioning */}
             <TaskCreationModal
                 isOpen={showTaskModal}
                 onClose={() => setShowTaskModal(false)}

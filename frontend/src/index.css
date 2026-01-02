@@ -1,277 +1,293 @@
+/* frontend/src/index.css */
+
+@import './styles/theme.css';
+@import './styles/base.css';
+
+/* Components */
+@import './styles/components/whiteboard.css';
+@import './styles/components/dashboard.css';
+@import './styles/notebookColors.css';
+@import './styles/components/drive.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-    :root {
-        --background: #FCFCFC;
-        --foreground: #212126;
+/* ===================================================================
+   BLOCKNOTE CUSTOM STYLES
+   =================================================================== */
 
-        --card: #ffffff;
-        --card-foreground: #212126;
-
-        --popover: #ffffff;
-        --popover-foreground: #212126;
-
-        --primary: #4d4dff;
-        --primary-foreground: #4d4d4d;
-        --primary-hover: #3a3aeb;
-
-        --secondary: #f2f2f5;
-        --secondary-foreground: #212126;
-
-        --muted: #f7f7f7;
-        --muted-foreground: #6b6b78;
-
-        --accent: #f1f1f4;
-        --accent-foreground: #1e293b;
-
-        --destructive: #f04c4c;
-        --destructive-foreground: #ffffff;
-
-        --border: #e0e0e6;
-        --connection: #e0e0e6;
-        --input: #e0e0e6;
-        --ring: #4d4dff;
-
-        --success: #00b32c;
-        --success-foreground: #ffffff;
-
-        --warning: #ffb300;
-        --warning-foreground: #ffffff;
-
-        --gradient-primary: linear-gradient(135deg, #4d4dff, #8066ff);
-        --gradient-secondary: linear-gradient(135deg, #f2f2f5, #e0e0e6);
-        --gradient-card: linear-gradient(145deg, #ffffff, #f7f7fa);
-
-        --shadow-sm: 0 2px 4px -1px rgb(33 33 38 / 0.06);
-        --shadow-md: 0 4px 8px -2px rgb(33 33 38 / 0.1);
-        --shadow-lg: 0 8px 24px -4px rgb(33 33 38 / 0.15);
-        --shadow-primary: 0 8px 32px -8px rgb(77 77 255 / 0.3);
-
-        --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        --radius: 0.5rem;
-
-        /* Sidebar Variables */
-        --sidebar-background: #fafafa;
-        --sidebar-foreground: #404045;
-        --sidebar-primary: #18181b;
-        --sidebar-primary-foreground: #fafafa;
-        --sidebar-accent: #f4f4f5;
-        --sidebar-accent-foreground: #18181b;
-        --sidebar-border: #e3e5eb;
-        --sidebar-ring: #3b82f6;
-    }
-
-    .dark {
-        --background: #09090b;
-        --foreground: #f8fafc;
-
-        --card: #0c0c0e;
-        --card-foreground: #f8fafc;
-
-        --popover: #121214;
-        --popover-foreground: #f8fafc;
-
-        --primary: #6366f1;
-        --primary-foreground: #ffffff;
-        --primary-hover: #818cf8;
-
-        --secondary: #1e293b;
-        --secondary-foreground: #f8fafc;
-
-        --muted: #27272a;
-        --muted-foreground: #a1a1aa;
-
-        --accent: #27272a;
-        --accent-foreground: #f8fafc;
-
-        --destructive: #ef4444;
-        --destructive-foreground: #f8fafc;
-
-        --border: #27272a;
-        --connection: #27272a;
-        --input: #27272a;
-        --ring: #6366f1;
-
-        /* Sidebar Dark Variables */
-        --sidebar-background: #09090b;
-        --sidebar-foreground: #f4f4f5;
-        --sidebar-primary: #f4f4f5;
-        --sidebar-primary-foreground: #ffffff;
-        --sidebar-accent: #27272a;
-        --sidebar-accent-foreground: #f4f4f5;
-        --sidebar-border: #27272a;
-        --sidebar-ring: #6366f1;
-    }
+/* Override BlockNote's default font size */
+.blocknote-wrapper .bn-editor {
+    font-size: var(--bn-font-size, 16px);
+    line-height: var(--bn-line-height, 1.6);
 }
 
-@layer base {
-    * {
-        @apply border-border;
-        transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        transition-duration: 200ms;
-    }
+/* ===== LEFT ALIGNMENT FIXES ===== */
 
-    .no-transitions * {
-        transition: none !important;
-    }
-
-    body {
-        @apply bg-background text-foreground;
-    }
-
-    ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-        background: var(--muted-foreground);
-        opacity: 0.5;
-        border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-        background: var(--foreground);
-    }
+/* Remove default centering - align text to the left */
+.blocknote-wrapper .bn-editor,
+.blocknote-wrapper .bn-block-content,
+.blocknote-wrapper [class*="blockContent"],
+.blocknote-wrapper [class*="inlineContent"] {
+    text-align: left !important;
 }
 
-@layer components {
-    .whiteboard-wrapper {
-        /* Light Mode Whiteboard Colors */
-        --wb-bg: #fafafa;
-        --wb-grid-dot: #a8aaad;
-        --wb-edge: #c4c9d1;
-        --wb-edge-hover: #4d4dff;
-        --wb-handle: #ffffff;
-        --wb-handle-border: #94a3b8;
-    }
-
-    .dark .whiteboard-wrapper {
-        /* Dark Mode Whiteboard Colors */
-        --wb-bg: #09090b;
-        --wb-grid-dot: #464649;
-        /* FIXED: Brighter edge color for better visibility on dark background */
-        --wb-edge: #57575b;
-        --wb-edge-hover: #818cf8;
-        --wb-handle: #18181b;
-        --wb-handle-border: #52525b;
-    }
-
-    /* --- Connection Lines (Edges) --- */
-    .whiteboard-wrapper .react-flow__edge-path {
-        stroke: var(--wb-edge);
-        stroke-width: 2px;
-        transition: stroke 0.3s ease, stroke-width 0.3s ease;
-    }
-
-    /* Edge Hover & Selection */
-    .whiteboard-wrapper .react-flow__edge:hover .react-flow__edge-path,
-    .whiteboard-wrapper .react-flow__edge.selected .react-flow__edge-path {
-        stroke: var(--wb-edge-hover);
-        stroke-width: 3px;
-        cursor: pointer;
-    }
-
-    /* --- The Arrows (Markers) --- */
-    .whiteboard-arrow {
-        fill: var(--wb-edge);
-        transition: fill 0.3s ease;
-    }
-
-    .whiteboard-wrapper .react-flow__edge:hover .whiteboard-arrow,
-    .whiteboard-arrow.selected,
-    .whiteboard-wrapper .react-flow__edge.selected .whiteboard-arrow {
-        fill: var(--wb-edge-hover);
-    }
-
-    /* --- Handles (Connection Dots) --- */
-    .whiteboard-wrapper .react-flow__handle {
-        width: 10px;
-        height: 10px;
-        background: var(--wb-handle);
-        border: 2px solid var(--wb-handle-border);
-        transition: all 0.2s;
-    }
-
-    .whiteboard-wrapper .react-flow__handle:hover {
-        background: var(--wb-edge-hover);
-        border-color: var(--wb-edge-hover);
-        width: 12px;
-        height: 12px;
-    }
-
-    /* --- Background Grid --- */
-    .whiteboard-wrapper .react-flow__background circle {
-        fill: var(--wb-grid-dot);
-    }
-
-    /* Override React Flow Controls for Dark Mode */
-    .whiteboard-wrapper .react-flow__controls {
-        background-color: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 0.5rem;
-        box-shadow: var(--shadow-md);
-        overflow: hidden;
-    }
-
-    .whiteboard-wrapper .react-flow__controls-button {
-        background-color: transparent;
-        border-bottom: 1px solid var(--border);
-        color: var(--muted-foreground);
-        transition: color 0.2s, background-color 0.2s;
-    }
-
-    .whiteboard-wrapper .react-flow__controls-button:last-child {
-        border-bottom: none;
-    }
-
-    .whiteboard-wrapper .react-flow__controls-button:hover {
-        background-color: var(--accent);
-        color: var(--foreground);
-    }
-
-    /* Fix icon colors inside buttons */
-    .whiteboard-wrapper .react-flow__controls-button svg {
-        fill: currentColor;
-        max-width: 14px;
-        max-height: 14px;
-    }
-
-    /* Override MiniMap Backgrounds */
-    .whiteboard-wrapper .react-flow__minimap {
-        background-color: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 0.5rem;
-    }
-
-    .dark .whiteboard-wrapper .react-flow__minimap-mask {
-        fill: rgba(0, 0, 0, 0.4); /* Darker mask for dark mode */
-    }
+/* Ensure all block types are left-aligned */
+.blocknote-wrapper .bn-editor h1,
+.blocknote-wrapper .bn-editor h2,
+.blocknote-wrapper .bn-editor h3,
+.blocknote-wrapper .bn-editor h4,
+.blocknote-wrapper .bn-editor h5,
+.blocknote-wrapper .bn-editor h6,
+.blocknote-wrapper .bn-editor p,
+.blocknote-wrapper .bn-editor ul,
+.blocknote-wrapper .bn-editor ol,
+.blocknote-wrapper .bn-editor li,
+.blocknote-wrapper .bn-editor blockquote,
+.blocknote-wrapper .bn-editor pre,
+.blocknote-wrapper .bn-editor div {
+    text-align: left !important;
 }
 
-@layer utilities {
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: hsl(var(--muted-foreground) / 0.3);
-        border-radius: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: hsl(var(--muted-foreground) / 0.5);
-    }
+/* Fix checkbox/task list alignment */
+.blocknote-wrapper .bn-editor [data-content-type="checkListItem"],
+.blocknote-wrapper .bn-editor [data-content-type="bulletListItem"],
+.blocknote-wrapper .bn-editor [data-content-type="numberedListItem"] {
+    text-align: left !important;
 }
 
-/* Import notebook color system */
-@import './styles/notebookColors.css';
+/* Override any Mantine centering */
+.blocknote-wrapper .mantine-Text-root,
+.blocknote-wrapper [class*="mantine"] {
+    text-align: left !important;
+}
+
+/* Fix block group alignment */
+.blocknote-wrapper [class*="blockGroup"],
+.blocknote-wrapper [class*="blockOuter"],
+.blocknote-wrapper [class*="block_"] {
+    text-align: left !important;
+}
+
+/* ===== THEME INTEGRATION ===== */
+
+/* Match BlockNote's background with your theme */
+.blocknote-wrapper [data-theming-css-variables-demo] {
+    --bn-colors-editor-background: hsl(var(--background));
+    --bn-colors-editor-text: hsl(var(--foreground));
+    --bn-colors-menu-background: hsl(var(--popover));
+    --bn-colors-menu-text: hsl(var(--popover-foreground));
+    --bn-colors-tooltip-background: hsl(var(--popover));
+    --bn-colors-tooltip-text: hsl(var(--popover-foreground));
+    --bn-colors-hovered-background: hsl(var(--muted));
+    --bn-colors-hovered-text: hsl(var(--foreground));
+    --bn-colors-selected-background: hsl(var(--accent));
+    --bn-colors-selected-text: hsl(var(--accent-foreground));
+    --bn-colors-disabled-background: hsl(var(--muted));
+    --bn-colors-disabled-text: hsl(var(--muted-foreground));
+    --bn-colors-shadow: hsl(var(--border));
+    --bn-colors-border: hsl(var(--border));
+    --bn-colors-side-menu: hsl(var(--muted-foreground));
+    --bn-colors-highlights-gray-background: hsl(var(--muted));
+    --bn-colors-highlights-gray-text: hsl(var(--muted-foreground));
+}
+
+/* Alternative theme variable targeting */
+.blocknote-wrapper,
+.blocknote-wrapper .bn-container,
+.blocknote-wrapper [data-bn-theme] {
+    --bn-colors-editor-background: hsl(var(--background));
+    --bn-colors-editor-text: hsl(var(--foreground));
+}
+
+/* ===== FOCUS STYLES ===== */
+
+/* Ensure proper focus styles */
+.blocknote-wrapper .bn-editor:focus-within {
+    outline: none;
+}
+
+/* ===== MENUS & TOOLBARS ===== */
+
+/* Style the slash menu and toolbar */
+.blocknote-wrapper .bn-side-menu,
+.blocknote-wrapper .bn-formatting-toolbar,
+.blocknote-wrapper .bn-slash-menu,
+.blocknote-wrapper .bn-suggestion-menu {
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    background: hsl(var(--popover));
+}
+
+/* Slash menu items */
+.blocknote-wrapper .bn-suggestion-menu-item {
+    text-align: left !important;
+}
+
+/* ===== PLACEHOLDER ===== */
+
+/* Placeholder styling */
+.blocknote-wrapper .bn-editor [data-placeholder]::before {
+    color: hsl(var(--muted-foreground));
+    opacity: 0.6;
+}
+
+/* ===== CODE BLOCKS ===== */
+
+/* Code block styling */
+.blocknote-wrapper .bn-editor pre {
+    background: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    text-align: left !important;
+}
+
+.blocknote-wrapper .bn-editor code {
+    background: hsl(var(--muted));
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+}
+
+.blocknote-wrapper .bn-editor pre code {
+    background: transparent;
+    padding: 0;
+}
+
+/* ===== BLOCKQUOTE ===== */
+
+/* Blockquote styling */
+.blocknote-wrapper .bn-editor blockquote {
+    border-left: 3px solid hsl(var(--primary));
+    padding-left: 1rem;
+    color: hsl(var(--muted-foreground));
+    text-align: left !important;
+}
+
+/* ===== LINKS ===== */
+
+/* Link styling */
+.blocknote-wrapper .bn-editor a {
+    color: hsl(var(--primary));
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.blocknote-wrapper .bn-editor a:hover {
+    opacity: 0.8;
+}
+
+/* ===== TABLES ===== */
+
+/* Table styling */
+.blocknote-wrapper .bn-editor table {
+    border-collapse: collapse;
+    width: 100%;
+    text-align: left !important;
+}
+
+.blocknote-wrapper .bn-editor th,
+.blocknote-wrapper .bn-editor td {
+    border: 1px solid hsl(var(--border));
+    padding: 0.5rem 0.75rem;
+    text-align: left !important;
+}
+
+.blocknote-wrapper .bn-editor th {
+    background: hsl(var(--muted));
+    font-weight: 600;
+}
+
+/* ===== LISTS ===== */
+
+/* List styling */
+.blocknote-wrapper .bn-editor ul,
+.blocknote-wrapper .bn-editor ol {
+    padding-left: 1.5rem;
+    text-align: left !important;
+}
+
+.blocknote-wrapper .bn-editor li {
+    text-align: left !important;
+}
+
+/* Checkbox/task list styling */
+.blocknote-wrapper .bn-editor input[type="checkbox"] {
+    accent-color: hsl(var(--primary));
+    margin-right: 0.5rem;
+}
+
+/* ===== HEADINGS ===== */
+
+/* Heading spacing */
+.blocknote-wrapper .bn-editor h1 {
+    font-size: 1em;       /* Changed from 2em */
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.blocknote-wrapper .bn-editor h2 {
+    font-size: 0.875em;      /* Changed from 1.5em */
+    font-weight: 600;
+    margin-top: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.blocknote-wrapper .bn-editor h3 {
+    font-size: 0.700em;     /* Changed from 1.25em */
+    font-weight: 600;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Optional: If you use h4-h6, you can size them here too */
+.blocknote-wrapper .bn-editor h4 {
+    font-size: 0.5em;
+    font-weight: 600;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+/* ===== DRAG HANDLE & SIDE MENU ===== */
+
+/* Side menu (drag handle, add button) */
+.blocknote-wrapper .bn-side-menu {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.blocknote-wrapper .bn-block-outer:hover .bn-side-menu,
+.blocknote-wrapper .bn-side-menu:hover {
+    opacity: 1;
+}
+
+/* ===== SELECTION ===== */
+
+/* Text selection */
+.blocknote-wrapper .bn-editor ::selection {
+    background: hsl(var(--primary) / 0.2);
+}
+
+/* Block selection */
+.blocknote-wrapper .bn-editor .bn-block-selected {
+    background: hsl(var(--accent));
+}
+
+/* ===== IMAGE BLOCKS ===== */
+
+.blocknote-wrapper .bn-editor img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+}
+
+/* ===== HORIZONTAL RULE ===== */
+
+.blocknote-wrapper .bn-editor hr {
+    border: none;
+    border-top: 1px solid hsl(var(--border));
+    margin: 1.5rem 0;
+}

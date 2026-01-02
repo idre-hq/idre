@@ -34,13 +34,16 @@ def create_s3_client():
     )
 
 
+# In ai-agent/src/agent/containers.py
+
 def create_openrouter_model(api_key: str, model: str):
-    """Factory function to create OpenRouter ChatOpenAI instance"""
-    if not api_key:
-        raise ValueError("API key is required for OpenRouter model")
+    # If no key provided, use Master Key from env (for testing Phase 2)
+    final_key = api_key or os.getenv("LITELLM_MASTER_KEY")
+
     return ChatOpenAI(
-        api_key=api_key,
-        base_url="https://openrouter.ai/api/v1",
+        api_key=final_key,
+        # CHANGED: Point to the Docker service name "litellm"
+        base_url="http://litellm:4000",
         model=model
     )
 

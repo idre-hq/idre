@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, UploadFile, File as FastAPIFile, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, constr
-from typing import Optional
+from typing import Optional, List
 
 from backend.api.dependencies import get_file_service, get_ai_service
 from backend.models import User, File
@@ -546,4 +546,53 @@ async def get_notebook_content(
         raise HTTPException(
             status_code=500,
             detail=f"An unexpected error occurred while retrieving content: {str(e)}"
+        )
+
+
+@router.post("/export/{notebook_id}")
+async def export_notebook(
+        notebook_id: str,
+        notebook_name: str = "notebook",
+        current_user: User = Depends(get_current_user),
+        file_service: FileService = Depends(get_file_service)
+):
+    """
+    Export all files in a notebook as a ZIP file.
+    The ZIP file maintains the folder structure and includes all files.
+    """
+    try:
+        # Generate ZIP file
+        zip_buffer = await file_service.export_notebook_as_zip(
+            user_id=str(current_user.user_id),
+            notebook_id=notebook_id,
+            notebook_name=notebook_name
+        )
+
+        # Prepare filename
+        safe_notebook_name = file_service._sanitize_filename(notebook_name)
+        filename = f"{safe_notebook_name}.zip"
+
+        # Create streaming response
+        def iterzip():
+            # Read in chunks to avoid memory issues
+            chunk_size = 8192
+            while True:
+                chunk = zip_buffer.read(chunk_size)
+                if not chunk:
+                    break
+                yield chunk
+
+        return StreamingResponse(
+            iterzip(),
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"'
+            }
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to export notebook: {str(e)}"
         )

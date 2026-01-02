@@ -1,0 +1,102 @@
+@layer components {
+    .whiteboard-wrapper {
+        --wb-bg: #fafafa;
+        --wb-grid-dot: #a8aaad;
+        --wb-edge: #c4c9d1;
+        --wb-edge-hover: #4d4dff;
+        --wb-handle: #ffffff;
+        --wb-handle-border: #94a3b8;
+    }
+
+    .dark .whiteboard-wrapper {
+        --wb-bg: #09090b;
+        --wb-grid-dot: #464649;
+        --wb-edge: #57575b;
+        --wb-edge-hover: #818cf8;
+        --wb-handle: #18181b;
+        --wb-handle-border: #52525b;
+    }
+
+    .whiteboard-wrapper .react-flow__edge-path {
+        stroke: var(--wb-edge);
+        stroke-width: 2px;
+        transition: stroke 0.3s ease, stroke-width 0.3s ease;
+    }
+
+    .whiteboard-wrapper .react-flow__edge:hover .react-flow__edge-path,
+    .whiteboard-wrapper .react-flow__edge.selected .react-flow__edge-path {
+        stroke: var(--wb-edge-hover);
+        stroke-width: 3px;
+        cursor: pointer;
+    }
+
+    .whiteboard-arrow {
+        fill: var(--wb-edge);
+        transition: fill 0.3s ease;
+    }
+
+    .whiteboard-wrapper .react-flow__edge:hover .whiteboard-arrow,
+    .whiteboard-arrow.selected,
+    .whiteboard-wrapper .react-flow__edge.selected .whiteboard-arrow {
+        fill: var(--wb-edge-hover);
+    }
+
+    .whiteboard-wrapper .react-flow__handle {
+        width: 10px;
+        height: 10px;
+        background: var(--wb-handle);
+        border: 2px solid var(--wb-handle-border);
+        transition: all 0.2s;
+    }
+
+    .whiteboard-wrapper .react-flow__handle:hover {
+        background: var(--wb-edge-hover);
+        border-color: var(--wb-edge-hover);
+        width: 12px;
+        height: 12px;
+    }
+
+    .whiteboard-wrapper .react-flow__background circle {
+        fill: var(--wb-grid-dot);
+    }
+
+    .whiteboard-wrapper .react-flow__controls {
+        background-color: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+    }
+
+    .whiteboard-wrapper .react-flow__controls-button {
+        background-color: transparent;
+        border-bottom: 1px solid var(--border);
+        color: var(--muted-foreground);
+        transition: color 0.2s, background-color 0.2s;
+    }
+
+    .whiteboard-wrapper .react-flow__controls-button:last-child {
+        border-bottom: none;
+    }
+
+    .whiteboard-wrapper .react-flow__controls-button:hover {
+        background-color: var(--accent);
+        color: var(--foreground);
+    }
+
+    .whiteboard-wrapper .react-flow__controls-button svg {
+        fill: currentColor;
+        max-width: 14px;
+        max-height: 14px;
+    }
+
+    .whiteboard-wrapper .react-flow__minimap {
+        background-color: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+    }
+
+    .dark .whiteboard-wrapper .react-flow__minimap-mask {
+        fill: rgba(0, 0, 0, 0.4);
+    }
+}

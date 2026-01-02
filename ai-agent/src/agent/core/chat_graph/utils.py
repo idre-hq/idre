@@ -8,11 +8,14 @@ from ...containers import container
 from ...tools.audio_utils import transcribe_audio
 
 
-def get_api_key(encrypted_api_key: Optional[str]) -> str:
+# In utils.py
+def get_api_key(encrypted_api_key: str | None) -> str:
     if encrypted_api_key:
         fernet_service = container.fernet_service()
         return fernet_service.decrypt_data(encrypted_api_key)
-    return settings.OPENROUTER_API_KEY
+
+    # Fallback to Master Key so the Proxy accepts the request
+    return os.getenv("LITELLM_MASTER_KEY")
 
 
 def process_audio_input(audio_path: str, model: str, api_key: str) -> str:

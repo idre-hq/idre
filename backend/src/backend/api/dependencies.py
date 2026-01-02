@@ -1,11 +1,13 @@
-from fastapi import Depends, HTTPException, Request, status
+# backend/api/dependencies.py
+
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.container import container, get_db_session
 from backend.repositories.assistant_repository import AssistantRepository
 from backend.repositories.chat_repository import ChatRepository
 from backend.repositories.file_repository import FileRepository
-from backend.repositories.folder_repository import FolderRepository # <--- Added
+from backend.repositories.folder_repository import FolderRepository
 from backend.repositories.model_api_repository import ModelApiRepository
 from backend.repositories.notebook_repository import NotebookRepository
 from backend.repositories.proposition_repository import PropositionRepository
@@ -21,7 +23,7 @@ from backend.services.ai_service import AIService
 from backend.services.assistant_service import AssistantService
 from backend.services.fernet_service import FernetService
 from backend.services.file_service import FileService
-from backend.services.folder_service import FolderService # <--- Added
+from backend.services.folder_service import FolderService
 from backend.services.task_service import TaskService
 from backend.services.whiteboard_service import WhiteboardService
 from backend.services.model_api_service import ModelApiService
@@ -36,12 +38,15 @@ from backend.services.user_service import UserService
 from backend.services.password import PasswordService
 from backend.repositories.model_group_repository import ModelGroupRepository
 from backend.services.model_group_service import ModelGroupService
+from backend.services.litellm_service import LiteLLMService
+from backend.services.notebook_template_service import NotebookTemplateService
 
 
 def get_model_group_repository(
         session: AsyncSession = Depends(get_db_session)
 ) -> ModelGroupRepository:
     return container.model_group_repository(session=session)
+
 
 def get_model_group_service(
         session: AsyncSession = Depends(get_db_session),
@@ -68,6 +73,7 @@ def get_chat_repository(
 def get_fernet_service() -> FernetService:
     return container.fernet_service()
 
+
 def get_assistant_repository(
         session: AsyncSession = Depends(get_db_session)
 ) -> AssistantRepository:
@@ -90,20 +96,23 @@ def get_file_repository(
     return container.file_repository(session=session)
 
 
-def get_file_service(
-        session: AsyncSession = Depends(get_db_session),
-        file_repo: FileRepository = Depends(get_file_repository)
-) -> FileService:
-    return container.file_service(
-        session=session,
-        file_repository=file_repo
-    )
-
-# --- Providers for FolderService (NEW) ---
 def get_folder_repository(
         session: AsyncSession = Depends(get_db_session)
 ) -> FolderRepository:
     return container.folder_repository(session=session)
+
+
+def get_file_service(
+        session: AsyncSession = Depends(get_db_session),
+        file_repo: FileRepository = Depends(get_file_repository),
+        folder_repo: FolderRepository = Depends(get_folder_repository)
+) -> FileService:
+    return container.file_service(
+        session=session,
+        file_repository=file_repo,
+        folder_repository=folder_repo
+    )
+
 
 def get_folder_service(
         session: AsyncSession = Depends(get_db_session),
@@ -127,6 +136,10 @@ def get_model_api_service(
     )
 
 
+def get_litellm_service() -> LiteLLMService:
+    return container.litellm_service()
+
+
 def get_notebook_repository(
         session: AsyncSession = Depends(get_db_session)
 ) -> NotebookRepository:
@@ -148,12 +161,16 @@ def get_user_repository(
 def get_user_service(
         session: AsyncSession = Depends(get_db_session),
         user_repo: UserRepository = Depends(get_user_repository),
-        fernet_service: FernetService = Depends(get_fernet_service)
+        fernet_service: FernetService = Depends(get_fernet_service),
+        litellm_service: LiteLLMService = Depends(get_litellm_service),
+        model_api_service: ModelApiService = Depends(get_model_api_service)
 ) -> UserService:
     return container.user_service(
         session=session,
         user_repository=user_repo,
-        fernet=fernet_service
+        fernet=fernet_service,
+        litellm_service=litellm_service,
+        model_api_service=model_api_service
     )
 
 
@@ -273,19 +290,6 @@ def get_chat_service(
 def get_password_service() -> PasswordService:
     return container.password_service()
 
-def get_notebook_service(
-        session: AsyncSession = Depends(get_db_session),
-        notebook_repo: NotebookRepository = Depends(get_notebook_repository),
-        thread_repo: ThreadRepository = Depends(get_thread_repository),
-        notebook_model_service: NotebookModelService = Depends(get_notebook_model_service)
-) -> NotebookService:
-    return container.notebook_service(
-        session=session,
-        notebook_repository=notebook_repo,
-        thread_repository=thread_repo,
-        notebook_model_service=notebook_model_service
-    )
-
 
 def get_task_repository(
         session: AsyncSession = Depends(get_db_session)
@@ -303,6 +307,44 @@ def get_task_service(
     )
 
 
+# --- Separated Dependency for NotebookTemplateService ---
+def get_notebook_template_service(
+    session: AsyncSession = Depends(get_db_session),
+    file_service: FileService = Depends(get_file_service),
+    folder_service: FolderService = Depends(get_folder_service),
+    task_service: TaskService = Depends(get_task_service)
+) -> NotebookTemplateService:
+    return container.notebook_template_service(
+        session=session,
+        file_service=file_service,
+        folder_service=folder_service,
+        task_service=task_service
+    )
+
+
+def get_notebook_service(
+        session: AsyncSession = Depends(get_db_session),
+        notebook_repo: NotebookRepository = Depends(get_notebook_repository),
+        thread_repo: ThreadRepository = Depends(get_thread_repository),
+        notebook_model_service: NotebookModelService = Depends(get_notebook_model_service),
+        file_service: FileService = Depends(get_file_service),
+        folder_service: FolderService = Depends(get_folder_service),
+        task_service: TaskService = Depends(get_task_service),
+        # Injected via Depends
+        notebook_template_service: NotebookTemplateService = Depends(get_notebook_template_service)
+) -> NotebookService:
+    return container.notebook_service(
+        session=session,
+        notebook_repository=notebook_repo,
+        thread_repository=thread_repo,
+        notebook_model_service=notebook_model_service,
+        file_service=file_service,
+        folder_service=folder_service,
+        task_service=task_service,
+        notebook_template_service=notebook_template_service
+    )
+
+
 def get_whiteboard_repository(
         session: AsyncSession = Depends(get_db_session)
 ) -> WhiteboardRepository:
@@ -317,28 +359,3 @@ def get_whiteboard_service(
         session=session,
         whiteboard_repository=whiteboard_repo
     )
-
-
-async def require_api_key(
-        request: Request,
-        session: AsyncSession = Depends(get_db_session)
-) -> None:
-    user_id = getattr(request.state, 'user_id', None)
-
-    if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User authentication required"
-        )
-
-    model_api_repo = ModelApiRepository(session)
-    fernet_service = FernetService()
-    model_api_service = ModelApiService(session, model_api_repo, fernet_service)
-
-    has_api_key = await model_api_service.has_api_key(user_id)
-
-    if not has_api_key:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="API key is required to use this application. Please set up your API key in the settings."
-        )

@@ -25,7 +25,7 @@ async def create_notebook(
     """
     try:
         notebook = await notebook_service.create_notebook(
-            user_id=current_user.email,
+            user_id=str(current_user.user_id),
             emoji=notebook_data.emoji,
             title=notebook_data.title,
             date=notebook_data.date,
@@ -33,7 +33,7 @@ async def create_notebook(
             text_color=notebook_data.text_color,
         )
 
-        await notebook_service.set_notebook_models(user_id=current_user.email, notebook_id=str(notebook.id))
+        await notebook_service.set_notebook_models(user_id=str(current_user.user_id), notebook_id=str(notebook.id))
 
         return NotebookResponse(
             id=str(notebook.id),
@@ -60,7 +60,7 @@ async def get_all_notebooks(
     Get paginated notebooks for the current user.
     """
     try:
-        all_notebooks = await notebook_service.get_notebooks_for_user(user_id=current_user.email)
+        all_notebooks = await notebook_service.get_notebooks_for_user(user_id=str(current_user.user_id))
 
         all_notebooks.sort(
             key=lambda x: x.updated_at or x.created_at,
@@ -124,7 +124,7 @@ async def get_notebook_by_id(
             raise HTTPException(status_code=404, detail="Notebook not found")
             
         # Basic authorization check (assuming notebook has user_id field)
-        if notebook.user_id != current_user.email:
+        if notebook.user_id != str(current_user.user_id):
              raise HTTPException(status_code=403, detail="Not authorized to access this notebook")
 
         return NotebookResponse(

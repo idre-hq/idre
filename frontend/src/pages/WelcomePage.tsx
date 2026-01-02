@@ -10,7 +10,7 @@ const WelcomePage: React.FC = () => {
 
   const handleGetStarted = () => {
     if (notebookId) {
-      navigate(`/idea/${notebookId}`);
+      navigate(`/chat/${notebookId}`);
     }
   };
 

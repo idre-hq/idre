@@ -5,13 +5,6 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useGoogleLogin } from '@react-oauth/google';
 import { FcGoogle } from 'react-icons/fc';
 
-const IdLogo = () => (
-    <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M22 0C9.84974 0 0 9.84974 0 22C0 34.1503 9.84974 44 22 44C34.1503 44 44 34.1503 44 22C44 9.84974 34.1503 0 22 0ZM22 39.6C12.2802 39.6 4.4 31.7198 4.4 22C4.4 12.2802 12.2802 4.4 22 4.4C31.7198 4.4 39.6 12.2802 39.6 22C39.6 31.7198 31.7198 39.6 22 39.6Z" fill="white"/>
-        <path d="M31.9 22H22V12.1H31.9V22Z" fill="white"/>
-    </svg>
-);
-
 const Login: React.FC = () => {
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
@@ -74,7 +67,6 @@ const Login: React.FC = () => {
 
                 {/* Left Section: Branding */}
                 <div className="hidden md:flex flex-col justify-between py-8">
-                    <IdLogo />
                     <div className="pl-4">
                         <img src="/login_logo.png" alt="IDRE Logo" className="w-[561px] ml-[65px]" />
                     </div>

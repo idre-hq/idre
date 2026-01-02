@@ -27,7 +27,7 @@ class File(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
-    notebook_id = Column(UUID(as_uuid=True))
+    notebook_id = Column(UUID(as_uuid=True), ForeignKey('notebooks.id', ondelete="CASCADE"))
 
     user_id = Column(String(255), nullable=False, index=True)
 

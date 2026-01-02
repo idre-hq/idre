@@ -1,0 +1,47 @@
+@layer components {
+    /* --- Editor Styles --- */
+    .drive-editor-container {
+        @apply w-full h-full flex justify-center transition-colors duration-200;
+        background-color: var(--editor-background);
+    }
+
+    .drive-textarea {
+        @apply w-full h-full p-8 font-mono resize-none focus:outline-none leading-relaxed transition-colors duration-200;
+        background-color: var(--editor-background);
+        color: var(--foreground);
+    }
+
+    /* --- Explorer / Tree Styles --- */
+    .explorer-item {
+        @apply flex items-center gap-1.5 py-[3px] pr-2 cursor-pointer text-sm rounded-md transition-colors border border-transparent;
+    }
+
+    .explorer-item:hover {
+        background-color: var(--explorer-item-hover);
+        color: var(--foreground);
+    }
+
+    .explorer-item.selected {
+        background-color: var(--explorer-item-selected);
+        color: var(--explorer-item-selected-fg);
+        border-color: var(--tab-active-border);
+    }
+
+    /* --- Tab Styles --- */
+    /* ✅ Fixed */
+    .file-tab {
+        @apply flex items-center gap-1 px-2 py-1 text-sm cursor-pointer rounded-md border border-transparent transition-all;
+        color: var(--muted-foreground);
+    }
+
+    .file-tab:hover {
+        background-color: var(--tab-hover);
+        color: var(--foreground);
+    }
+
+    .file-tab.active {
+        background-color: var(--tab-active-bg);
+        border-color: var(--tab-active-border);
+        color: var(--foreground);
+    }
+}

@@ -14,10 +14,10 @@ class ModelApiService:
     """
 
     def __init__(
-        self,
-        session: AsyncSession,
-        model_api_repository: ModelApiRepository,
-        fernet_service: FernetService
+            self,
+            session: AsyncSession,
+            model_api_repository: ModelApiRepository,
+            fernet_service: FernetService
     ):
         self.session = session
         self.repo = model_api_repository

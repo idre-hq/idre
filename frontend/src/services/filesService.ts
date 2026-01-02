@@ -335,4 +335,34 @@ export const fileService = {
             throw new Error(`Task generation failed: ${response.statusText} (${errorText})`);
         }
     },
+
+    /**
+     * Export notebook as ZIP file
+     */
+    exportNotebookAsZip: async (notebook_id: string, notebook_name: string): Promise<void> => {
+        const url = `${FILE_BACKEND_SERVICE_URL}/export/${notebook_id}`;
+        const params = new URLSearchParams();
+        params.append('notebook_name', notebook_name);
+        
+        const response = await fetch(`${url}?${params.toString()}`, {
+            method: 'POST',
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Export failed: ${response.statusText} (${errorText})`);
+        }
+
+        // Get the blob and create download
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `${notebook_name.replace(/[^a-z0-9]/gi, '_')}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(downloadUrl);
+    },
 };

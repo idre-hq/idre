@@ -39,7 +39,7 @@ class Task(Base):
 
     # Ownership and relationships
     user_id = Column(String(255), nullable=False, index=True)
-    notebook_id = Column(UUID(as_uuid=True), ForeignKey('notebooks.id'), nullable=False, index=True)
+    notebook_id = Column(UUID(as_uuid=True), ForeignKey('notebooks.id', ondelete="CASCADE"), nullable=False, index=True)
 
     # Core task fields
     title = Column(Text, nullable=False)
@@ -64,7 +64,7 @@ class Task(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relationships
-    notebook = relationship("Notebook", backref="tasks")
+    notebook = relationship("Notebook", back_populates="tasks")
 
     def __repr__(self):
         return f"<Task(id={self.id}, title='{self.title}', status='{self.status}')>"

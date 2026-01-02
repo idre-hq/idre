@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface ContextMenuItem {
     label: string;
@@ -17,12 +18,12 @@ interface ContextMenuProps {
 }
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
-    items,
-    visible,
-    x,
-    y,
-    onClose
-}) => {
+                                                     items,
+                                                     visible,
+                                                     x,
+                                                     y,
+                                                     onClose
+                                                 }) => {
     const menuRef = useRef<HTMLDivElement>(null);
     const [adjustedPosition, setAdjustedPosition] = useState({ x, y });
 
@@ -80,15 +81,16 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
 
     if (!visible) return null;
 
-    return (
+    // Use Portal to render outside of any overflow:hidden or transform containers (like Grid Layout)
+    return createPortal(
         <>
             <div
-                className="fixed inset-0 z-40"
+                className="fixed inset-0 z-[9998]"
                 style={{ backgroundColor: 'transparent' }}
             />
             <div
                 ref={menuRef}
-                className="fixed py-1 min-w-[160px] bg-background border border-border rounded-md shadow-lg z-50"
+                className="fixed py-1 min-w-[160px] bg-background border border-border rounded-md shadow-lg z-[9999]"
                 style={{
                     left: adjustedPosition.x,
                     top: adjustedPosition.y,
@@ -97,7 +99,8 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                 {items.map((item, index) => (
                     <button
                         key={index}
-                        onClick={() => {
+                        onClick={(e) => {
+                            e.stopPropagation();
                             if (!item.disabled) {
                                 item.onClick();
                                 onClose();
@@ -108,11 +111,11 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                             w-full px-3 py-2 text-sm text-left flex items-center gap-2
                             transition-colors cursor-pointer
                             ${item.disabled
-                                ? 'text-muted-foreground/50 cursor-not-allowed'
-                                : item.danger
-                                    ? 'text-destructive hover:bg-destructive/10'
-                                    : 'hover:bg-muted/50 text-foreground'
-                            }
+                            ? 'text-muted-foreground/50 cursor-not-allowed'
+                            : item.danger
+                                ? 'text-destructive hover:bg-destructive/10'
+                                : 'hover:bg-muted/50 text-foreground'
+                        }
                         `}
                     >
                         {item.icon && <span className="w-4 h-4">{item.icon}</span>}
@@ -120,7 +123,8 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     </button>
                 ))}
             </div>
-        </>
+        </>,
+        document.body
     );
 };
 

@@ -7,6 +7,8 @@ import asyncio
 import shutil
 import tempfile
 import subprocess
+import zipfile
+from io import BytesIO
 from typing import List, Optional, Dict, Any, BinaryIO, Tuple
 
 from dotenv import load_dotenv
@@ -14,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.models.file import File, ProcessingStatus
 from backend.repositories.file_repository import FileRepository
+from backend.repositories.folder_repository import FolderRepository
 
 load_dotenv()
 
@@ -27,10 +30,11 @@ class FileService:
     Service for handling file-related business logic, including S3 storage orchestration.
     """
 
-    def __init__(self, session: AsyncSession, file_repository: FileRepository, s3_client=None):
+    def __init__(self, session: AsyncSession, file_repository: FileRepository, s3_client=None, folder_repository=None):
         self.session = session
         self.repo = file_repository
         self.s3_client = s3_client
+        self.folder_repo = folder_repository
 
     @staticmethod
     def format_file_size(size_bytes: int) -> str:
@@ -122,7 +126,7 @@ class FileService:
     async def upload_to_s3(self, file_obj: BinaryIO, object_name: str, content_type: str) -> str:
         """
         Uploads a file object to S3 (SeaweedFS).
-        Returns the internal URL.
+        Returns to internal URL.
         """
         if not self.s3_client:
             raise ValueError("S3 Client not configured")
@@ -172,6 +176,26 @@ class FileService:
         loop = asyncio.get_running_loop()
         response = await loop.run_in_executor(None, _get_sync)
         return response['Body']
+
+    async def get_file_bytes_from_s3(self, unique_filename: str) -> bytes:
+        """
+        Downloads a file from S3 and returns it as bytes.
+        Safe for use in loops as it runs IO in executor.
+        """
+        if not self.s3_client:
+            return b""
+
+        def _read_sync():
+            try:
+                obj = self.s3_client.get_object(Bucket=BUCKET_NAME, Key=unique_filename)
+                return obj['Body'].read()
+            except Exception as e:
+                # Log error but don't crash, return empty bytes so export can continue
+                print(f"Error reading bytes from S3 ({unique_filename}): {e}")
+                return b""
+
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, _read_sync)
 
     async def get_text_content_from_s3(self, unique_filename: str) -> str:
         """
@@ -249,7 +273,7 @@ class FileService:
         return file_record
 
     async def delete_file(self, user_id: str, file_id: str) -> bool:
-        """Delete a file record and the S3 object."""
+        """Delete a file record and S3 object."""
         file_record = await self.repo.get_by_id_and_user(file_id=file_id, user_id=user_id)
         if not file_record:
             return False
@@ -301,3 +325,101 @@ class FileService:
                 continue
 
         return "\n\n".join(content_parts)
+
+    async def export_notebook_as_zip(self, user_id: str, notebook_id: str, notebook_name: str) -> BytesIO:
+        """
+        Export all files in a notebook as a ZIP file, maintaining folder structure.
+        Returns a BytesIO object containing the ZIP file.
+        """
+        # Fetch all files and folders for the notebook
+        files = await self.repo.list_by_user_id(user_id=user_id, notebook_id=notebook_id)
+
+        # Create a BytesIO buffer for the ZIP
+        zip_buffer = BytesIO()
+
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Create a folder with the notebook name
+            safe_notebook_name = self._sanitize_filename(notebook_name or "notebook")
+            base_folder = f"{safe_notebook_name}/"
+
+            # Fetch all folders to build folder structure
+            folders = []
+            if self.folder_repo:
+                folders = await self.folder_repo.list_by_notebook(user_id=user_id, notebook_id=notebook_id)
+
+            # Create folder structure in ZIP
+            for folder in folders:
+                folder_path = self._get_folder_path(folder, folders)
+                zip_path = f"{base_folder}{folder_path}/"
+                zipf.writestr(zip_path, "")  # Create empty directory entry
+
+            # Add files to ZIP
+            for file in files:
+                try:
+                    file_content = b""
+
+                    # 1. Try DB content first (Source of truth for text/template files)
+                    if file.content:
+                        if isinstance(file.content, str):
+                            file_content = file.content.encode('utf-8')
+                        else:
+                            file_content = file.content
+
+                    # 2. If DB content is empty, try S3 (Images, Audio, or legacy text)
+                    # Only try if we have a unique_filename, which implies a backing file
+                    elif file.unique_filename:
+                        try:
+                            file_content = await self.get_file_bytes_from_s3(file.unique_filename)
+                        except Exception as s3_err:
+                            print(f"S3 fetch failed for {file.filename}: {s3_err}")
+                            # Fallback to empty if S3 fails
+                            file_content = b""
+
+                    # Determine the path within the ZIP
+                    if file.folder_id:
+                        # Find the folder safely using string comparison for UUIDs
+                        folder = next((f for f in folders if str(f.id) == str(file.folder_id)), None)
+                        if folder:
+                            folder_path = self._get_folder_path(folder, folders)
+                            zip_path = f"{base_folder}{folder_path}/{file.filename}"
+                        else:
+                            # Folder not found, put in root
+                            zip_path = f"{base_folder}{file.filename}"
+                    else:
+                        # No folder, put in root
+                        zip_path = f"{base_folder}{file.filename}"
+
+                    # Add file to ZIP
+                    zipf.writestr(zip_path, file_content)
+
+                except Exception as e:
+                    print(f"Error adding file {file.filename} to ZIP: {e}")
+                    continue
+
+        # Reset buffer position
+        zip_buffer.seek(0)
+        return zip_buffer
+
+    def _get_folder_path(self, folder: Any, all_folders: List[Any], path: str = "") -> str:
+        """
+        Recursively build folder path by traversing parent folders.
+        """
+        current_path = folder.name if not path else f"{folder.name}/{path}"
+
+        # Find parent folder
+        if folder.parent_id:
+            parent = next((f for f in all_folders if str(f.id) == str(folder.parent_id)), None)
+            if parent:
+                return self._get_folder_path(parent, all_folders, current_path)
+
+        return current_path
+
+    def _sanitize_filename(self, filename: str) -> str:
+        """
+        Sanitize filename for safe file system usage.
+        """
+        # Remove or replace invalid characters
+        invalid_chars = '<>:"/\\|?*'
+        for char in invalid_chars:
+            filename = filename.replace(char, '_')
+        return filename.strip()

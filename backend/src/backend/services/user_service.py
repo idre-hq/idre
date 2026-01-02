@@ -6,34 +6,30 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.models.user import User
 from backend.repositories.user_repository import UserRepository
+# ADDED IMPORTS
+from backend.services.litellm_service import LiteLLMService
+from backend.services.model_api_service import ModelApiService
 
 
 class UserService:
     """
     Service for handling user-related business logic.
-
-    This service coordinates data access through the UserRepository and handles
-    operations like data encryption and business rule enforcement. It is responsible
-    for managing the overall transaction for complex operations.
     """
 
     def __init__(
         self,
         session: AsyncSession,
         user_repository: UserRepository,
-        fernet: Fernet
+        fernet: Fernet,
+        # INJECT NEW DEPENDENCIES
+        litellm_service: LiteLLMService,
+        model_api_service: ModelApiService
     ):
-        """
-        Initializes the UserService with its dependencies.
-
-        Args:
-            session (AsyncSession): The request-scoped SQLAlchemy session for transaction control.
-            user_repository (UserRepository): The repository for User data access.
-            fernet (Fernet): The cryptography instance for encryption/decryption.
-        """
         self.session = session
         self.user_repo = user_repository
         self.fernet = fernet
+        self.litellm_service = litellm_service
+        self.model_api_service = model_api_service
 
     async def check_user_exist(self, user_id: uuid.UUID) -> bool:
         """Checks if a user exists based on their ID."""
@@ -57,17 +53,15 @@ class UserService:
         return await self.user_repo.get_by_id(user_id)
 
     async def create_user(
-        self,
-        email: str,
-        username: str,
-        password: str,
-        name: str,
-        surname: str,
-        is_google_auth: bool = False
+            self,
+            email: str,
+            username: str,
+            password: str,
+            name: str,
+            surname: str,
+            is_google_auth: bool = False
     ) -> User:
-        """
-        Orchestrates the creation of a new user in a single transaction.
-        """
+        # 1. Create User in DB
         new_user = User(
             email=email,
             username=username,
@@ -79,6 +73,27 @@ class UserService:
         self.user_repo.add(new_user)
         await self.session.commit()
         await self.session.refresh(new_user)
+
+        # 2. Call LiteLLM to generate a Virtual Key (Free Tier)
+        # Note: We cast UUID to str for the API call
+        virtual_key = self.litellm_service.generate_key_for_user(
+            user_id=str(new_user.user_id),
+            plan_name="free",
+            email=email
+        )
+
+        # 3. Encrypt and Save via ModelApiService
+        # Since we removed BYOK, the user doesn't do this manually anymore.
+        # The system does it automatically upon signup.
+        if virtual_key:
+            await self.model_api_service.upsert_api_key(
+                user_id=str(new_user.user_id),
+                raw_api_key=virtual_key
+            )
+            print(f"✅ Created managed AI key for user {new_user.user_id}")
+        else:
+            print(f"❌ Failed to generate AI key for user {new_user.user_id}")
+
         return new_user
 
     async def update_user_google_auth(self, user_id: uuid.UUID, is_google_auth: bool) -> User | None:

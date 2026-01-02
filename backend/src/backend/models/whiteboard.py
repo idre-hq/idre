@@ -6,6 +6,7 @@ from sqlalchemy import (
     String,
     Text,
     DateTime,
+    ForeignKey,
     func,
     JSON
 )
@@ -21,7 +22,7 @@ class Whiteboard(Base):
 
     # Ownership and relationships
     user_id = Column(String(255), nullable=False, index=True)
-    notebook_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    notebook_id = Column(UUID(as_uuid=True), ForeignKey('notebooks.id', ondelete="CASCADE"), nullable=False, index=True)
 
     # Core whiteboard fields
     title = Column(Text, nullable=False, default='Untitled Whiteboard')

@@ -1,4 +1,4 @@
-# backend/containers.py
+# backend/container.py
 
 import os
 from typing import AsyncGenerator
@@ -7,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
 import redis.asyncio as redis
+import boto3
+from botocore.client import Config
 
 from backend.databases.postgres_db import AsyncPostgreSQLDatabase
 from backend.repositories.app_settings_repository import AppSettingsRepository
@@ -43,8 +45,8 @@ from backend.services.notebook_service import NotebookService
 from backend.services.whiteboard_service import WhiteboardService
 from backend.repositories.model_group_repository import ModelGroupRepository
 from backend.services.model_group_service import ModelGroupService
-import boto3  # <--- Add this
-from botocore.client import Config  # <--- Add this
+from backend.services.litellm_service import LiteLLMService
+from backend.services.notebook_template_service import NotebookTemplateService
 
 load_dotenv()
 
@@ -56,7 +58,7 @@ def create_s3_client():
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID", "any"),
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", "any"),
         config=Config(signature_version='s3v4'),
-        region_name='us-east-1'  # SeaweedFS defaults
+        region_name='us-east-1'
     )
 
 
@@ -102,6 +104,10 @@ class Container(containers.DeclarativeContainer):
         ModelApiService,
         fernet_service=fernet_service,
         model_api_repository=model_api_repository,
+    )
+
+    litellm_service = providers.Factory(
+        LiteLLMService
     )
 
     file_repository = providers.Factory(FileRepository)
@@ -191,6 +197,8 @@ class Container(containers.DeclarativeContainer):
         UserService,
         fernet=fernet,
         user_repository=user_repository,
+        litellm_service=litellm_service,
+        model_api_service=model_api_service,
     )
 
     password_service = providers.Factory(
@@ -199,11 +207,24 @@ class Container(containers.DeclarativeContainer):
 
     notebook_repository = providers.Factory(NotebookRepository)
 
+    # Factory definition for the template service
+    notebook_template_service = providers.Factory(
+        NotebookTemplateService,
+        file_service=file_service,
+        folder_service=folder_service,
+        task_service=task_service
+    )
+
+    # Notebook service now includes the template service
     notebook_service = providers.Factory(
         NotebookService,
         notebook_repository=notebook_repository,
         thread_repository=thread_repository,
         notebook_model_service=notebook_model_service,
+        file_service=file_service,
+        folder_service=folder_service,
+        task_service=task_service,
+        notebook_template_service=notebook_template_service
     )
 
     chat_service = providers.Factory(

@@ -1,0 +1,50 @@
+/* React Grid Layout Customization */
+.react-grid-item.react-grid-placeholder {
+    background: hsl(var(--primary) / 0.1) !important;
+    border: 2px dashed hsl(var(--primary) / 0.3) !important;
+    border-radius: 0.75rem !important;
+    opacity: 1 !important;
+}
+
+.react-grid-item > .react-resizable-handle {
+    background-image: none !important;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+    content: "";
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    width: 10px;
+    height: 10px;
+    border-right: 2px solid hsl(var(--muted-foreground) / 0.4);
+    border-bottom: 2px solid hsl(var(--muted-foreground) / 0.4);
+    border-radius: 0 0 2px 0;
+}
+
+.react-grid-item:hover > .react-resizable-handle::after {
+    border-color: hsl(var(--primary) / 0.6);
+}
+
+.react-grid-item {
+    transition: transform 200ms ease, box-shadow 200ms ease !important;
+}
+
+.react-grid-item.cssTransforms {
+    transition-property: transform, box-shadow !important;
+}
+
+.react-grid-item.resizing,
+.react-grid-item.react-draggable-dragging {
+    transition: none !important;
+    z-index: 100;
+    box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.2);
+}
+
+.widget-drag-handle {
+    cursor: grab;
+}
+
+.widget-drag-handle:active {
+    cursor: grabbing;
+}

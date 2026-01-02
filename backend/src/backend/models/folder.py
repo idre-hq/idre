@@ -12,7 +12,7 @@ class Folder(Base):
 
     # Ownership
     user_id = Column(String(255), nullable=False, index=True)
-    notebook_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    notebook_id = Column(UUID(as_uuid=True), ForeignKey('notebooks.id', ondelete="CASCADE"), nullable=False, index=True)
 
     # Hierarchy (Self-referential)
     parent_id = Column(UUID(as_uuid=True), ForeignKey('folders.id', ondelete="CASCADE"), nullable=True)
